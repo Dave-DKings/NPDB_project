@@ -88,9 +88,25 @@ def build_cells() -> list[dict]:
             This section is especially important in Colab. It tries to find the project root, add it to `sys.path`, and resolve the CSV path without requiring manual edits inside the analysis modules.
             """
         ),
+        md_cell(
+            """
+            ### Colab Data Flow
+
+            In Colab, the bootstrap cell below will:
+
+            1. mount Google Drive
+            2. look for `NPDB2510.CSV` in Drive first
+            3. if it is not already in Drive, accept a one-time upload into the Colab session
+            4. copy that uploaded file into Drive
+            5. continue using the Drive-backed CSV path for the rest of the notebook
+
+            This avoids re-uploading the raw CSV every time you reconnect to Colab.
+            """
+        ),
         code_cell(
             """
             import os
+            import shutil
             import sys
             from pathlib import Path
 
@@ -102,6 +118,15 @@ def build_cells() -> list[dict]:
                     return False
 
             IS_COLAB = detect_colab()
+
+            DRIVE_PROJECT_DATA_DIR = Path("/content/drive/MyDrive/NPDB Project/NpdbPublicUseDataCsv")
+            DRIVE_DATA_PATH = DRIVE_PROJECT_DATA_DIR / "NPDB2510.CSV"
+
+            if IS_COLAB:
+                from google.colab import drive, files  # type: ignore
+
+                drive.mount("/content/drive", force_remount=False)
+                DRIVE_PROJECT_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
             candidate_roots = []
             env_root = os.environ.get("NPDB_PROJECT_ROOT")
@@ -143,6 +168,9 @@ def build_cells() -> list[dict]:
             if env_data:
                 data_candidates.append(Path(env_data).expanduser())
 
+            if IS_COLAB and DRIVE_DATA_PATH.exists():
+                data_candidates.append(DRIVE_DATA_PATH)
+
             data_candidates.extend(
                 [
                     PROJECT_ROOT / "NpdbPublicUseDataCsv" / "NPDB2510.CSV",
@@ -156,8 +184,29 @@ def build_cells() -> list[dict]:
             for candidate in data_candidates:
                 if candidate.exists():
                     DATA_PATH_OVERRIDE = candidate.resolve()
-                    os.environ["NPDB_DATA_PATH"] = str(DATA_PATH_OVERRIDE)
                     break
+
+            if IS_COLAB:
+                if DATA_PATH_OVERRIDE is None:
+                    print("NPDB2510.CSV not found in Drive or the current Colab session.")
+                    print("Choose the file now. It will be copied into Google Drive for reuse.")
+                    uploaded = files.upload()
+                    if "NPDB2510.CSV" not in uploaded:
+                        raise FileNotFoundError(
+                            "Upload failed or a file other than 'NPDB2510.CSV' was provided. "
+                            "Upload the raw NPDB CSV with the exact filename 'NPDB2510.CSV'."
+                        )
+                    uploaded_path = Path("/content/NPDB2510.CSV")
+                    shutil.copy2(uploaded_path, DRIVE_DATA_PATH)
+                    DATA_PATH_OVERRIDE = DRIVE_DATA_PATH.resolve()
+                    print(f"Uploaded file copied to Drive: {DATA_PATH_OVERRIDE}")
+                elif DATA_PATH_OVERRIDE.name == "NPDB2510.CSV" and str(DATA_PATH_OVERRIDE).startswith("/content/") and not str(DATA_PATH_OVERRIDE).startswith("/content/drive/"):
+                    shutil.copy2(DATA_PATH_OVERRIDE, DRIVE_DATA_PATH)
+                    DATA_PATH_OVERRIDE = DRIVE_DATA_PATH.resolve()
+                    print(f"Session upload copied to Drive: {DATA_PATH_OVERRIDE}")
+
+            if DATA_PATH_OVERRIDE is not None:
+                os.environ["NPDB_DATA_PATH"] = str(DATA_PATH_OVERRIDE)
 
             print(f"Colab runtime: {IS_COLAB}")
             print(f"Project root: {PROJECT_ROOT}")
