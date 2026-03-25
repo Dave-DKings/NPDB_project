@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local tooling
+.claude/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Large local data files
+NpdbPublicUseDataCsv/NPDB2510.CSV
+
+
+NpdbPublicUseDataCsv.zip
+
+Medical_Liability_Decoded.pdf
+
+Malpractice_Research_Report.pdf
+
+Predictive Analytics and Medical Malpractice.pdf
+
+mld_pages/
+
+analysis_NPDB.ipynb.bak
+
+NpdbPublicUseDataCsv.zip
+
+Medical_Liability_Decoded.pdf
+
+Malpractice_Research_Report.pdf
+
+Predictive Analytics and Medical Malpractice.pdf
+
+mld_pages/
+
+analysis_NPDB.ipynb.bak
+
+NpdbPublicUseDataCsv.zip
+
+Medical_Liability_Decoded.pdf
+
+Malpractice_Research_Report.pdf
+
+Predictive Analytics and Medical Malpractice.pdf
+
+analysis_NPDB.ipynb.bak
+
+mld_pages/
