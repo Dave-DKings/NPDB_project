@@ -1,9 +1,39 @@
 """Project-wide constants for NPDB analysis."""
 
+import os
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_PATH = PROJECT_ROOT / "NpdbPublicUseDataCsv" / "NPDB2510.CSV"
+
+def _resolve_project_root() -> Path:
+    env_root = os.environ.get("NPDB_PROJECT_ROOT")
+    if env_root:
+        return Path(env_root).expanduser().resolve()
+    return Path(__file__).resolve().parent.parent
+
+
+def _resolve_data_path(project_root: Path) -> Path:
+    env_path = os.environ.get("NPDB_DATA_PATH")
+    if env_path:
+        return Path(env_path).expanduser().resolve()
+
+    default_path = project_root / "NpdbPublicUseDataCsv" / "NPDB2510.CSV"
+    if default_path.exists():
+        return default_path
+
+    candidate_paths = [
+        Path("/content/npdb_project/NpdbPublicUseDataCsv/NPDB2510.CSV"),
+        Path("/content/NPDB_project/NpdbPublicUseDataCsv/NPDB2510.CSV"),
+        Path("/content/NPDB2510.CSV"),
+    ]
+    for candidate in candidate_paths:
+        if candidate.exists():
+            return candidate.resolve()
+
+    return default_path
+
+
+PROJECT_ROOT = _resolve_project_root()
+DATA_PATH = _resolve_data_path(PROJECT_ROOT)
 
 MALPRACTICE_RECORD_TYPES = ("M", "P")
 CURRENCY_COLUMNS = ("PAYMENT", "TOTALPMT")
@@ -129,4 +159,3 @@ CPI_FACTORS_2025 = {
     2024: 0.97,
     2025: 0.95,
 }
-

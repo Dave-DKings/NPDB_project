@@ -29,10 +29,22 @@ advanced_NPDB.ipynb
 
 ## Colab Setup
 
-If you clone this repository into Colab, also place the NPDB CSV at:
+Clone the repository into Colab:
 
-```text
-NpdbPublicUseDataCsv/NPDB2510.CSV
+```python
+!git clone https://github.com/Dave-DKings/NPDB_project.git /content/npdb_project
 ```
 
-or update the data path in `npdb_analysis/config.py`.
+Then place the NPDB CSV at one of these locations:
+
+```text
+/content/npdb_project/NpdbPublicUseDataCsv/NPDB2510.CSV
+/content/NPDB2510.CSV
+```
+
+The notebook bootstrap cell will look for both locations automatically. You can also override the path with:
+
+```python
+import os
+os.environ["NPDB_DATA_PATH"] = "/full/path/to/NPDB2510.CSV"
+```

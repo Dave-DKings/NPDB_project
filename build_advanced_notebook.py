@@ -81,10 +81,91 @@ def build_cells() -> list[dict]:
             The notebook is designed to be run top-to-bottom the first time. After the foundation sections are executed, descriptive and modeling sections can be rerun independently.
             """
         ),
+        md_cell(
+            """
+            ## Runtime Bootstrap
+
+            This section is especially important in Colab. It tries to find the project root, add it to `sys.path`, and resolve the CSV path without requiring manual edits inside the analysis modules.
+            """
+        ),
         code_cell(
             """
+            import os
+            import sys
             from pathlib import Path
 
+            def detect_colab() -> bool:
+                try:
+                    import google.colab  # type: ignore
+                    return True
+                except ImportError:
+                    return False
+
+            IS_COLAB = detect_colab()
+
+            candidate_roots = []
+            env_root = os.environ.get("NPDB_PROJECT_ROOT")
+            if env_root:
+                candidate_roots.append(Path(env_root).expanduser())
+
+            candidate_roots.extend(
+                [
+                    Path.cwd(),
+                    Path.cwd() / "NPDB_project",
+                    Path.cwd() / "npdb_project",
+                    Path("/content/NPDB_project"),
+                    Path("/content/npdb_project"),
+                    Path("/content/drive/MyDrive/NPDB Project"),
+                    Path("/content/drive/MyDrive/NPDB_project"),
+                ]
+            )
+
+            PROJECT_ROOT = None
+            for candidate in candidate_roots:
+                if (candidate / "npdb_analysis").exists():
+                    PROJECT_ROOT = candidate.resolve()
+                    break
+
+            if PROJECT_ROOT is None:
+                raise FileNotFoundError(
+                    "Could not find the project root containing 'npdb_analysis'. "
+                    "In Colab, clone the GitHub repo first, for example: "
+                    "!git clone https://github.com/Dave-DKings/NPDB_project.git /content/npdb_project"
+                )
+
+            if str(PROJECT_ROOT) not in sys.path:
+                sys.path.insert(0, str(PROJECT_ROOT))
+
+            os.environ["NPDB_PROJECT_ROOT"] = str(PROJECT_ROOT)
+
+            data_candidates = []
+            env_data = os.environ.get("NPDB_DATA_PATH")
+            if env_data:
+                data_candidates.append(Path(env_data).expanduser())
+
+            data_candidates.extend(
+                [
+                    PROJECT_ROOT / "NpdbPublicUseDataCsv" / "NPDB2510.CSV",
+                    Path("/content/NPDB2510.CSV"),
+                    Path("/content/drive/MyDrive/NPDB2510.CSV"),
+                    Path("/content/drive/MyDrive/NPDB Project/NpdbPublicUseDataCsv/NPDB2510.CSV"),
+                ]
+            )
+
+            DATA_PATH_OVERRIDE = None
+            for candidate in data_candidates:
+                if candidate.exists():
+                    DATA_PATH_OVERRIDE = candidate.resolve()
+                    os.environ["NPDB_DATA_PATH"] = str(DATA_PATH_OVERRIDE)
+                    break
+
+            print(f"Colab runtime: {IS_COLAB}")
+            print(f"Project root: {PROJECT_ROOT}")
+            print(f"Data path found: {DATA_PATH_OVERRIDE}")
+            """
+        ),
+        code_cell(
+            """
             import matplotlib.pyplot as plt
             import numpy as np
             import pandas as pd
